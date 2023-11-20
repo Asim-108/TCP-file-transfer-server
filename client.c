@@ -51,6 +51,7 @@ void chat(int sockfd){
 int main(){
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd == -1){
         printf("socket creation failed");
         exit(0);
