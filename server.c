@@ -10,6 +10,13 @@
 #define MAX_NAME 100
 #define MAX_DATA 1000
 
+#define SA struct sockaddr
+
+//previously used define statements, subject to change
+#define PORT 8080
+#define MAXLINE 1024
+#define SERVERADDRESS "192.168.1.1"
+
 typedef struct message
 {
     unsigned int type;
@@ -19,7 +26,7 @@ typedef struct message
 }Message;
 
 void chat(int connfd){
-    har buff[MAX_DATA]; 
+    char buff[MAX_DATA]; 
     int n; 
     // infinite loop for chat 
     for (;;) { 
