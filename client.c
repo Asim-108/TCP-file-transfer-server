@@ -40,7 +40,7 @@ void chat(int sockfd){
         write(sockfd, buff, sizeof(buff));
         bzero(buff, sizeof(buff));
         read(sockfd, buff, sizeof(buff));
-        printf("Server sent: %s", buff);
+        printf("Server sent: %s\n", buff);
         if((strncmp(buff, "exit", f)) == 0){
             printf("Client exit\n");
             break;
