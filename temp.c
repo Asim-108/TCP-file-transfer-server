@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <stdbool.h>
+
 #define MAX_NAME 100
 #define MAX_DATA 1000
 
@@ -44,27 +46,12 @@ char *extractSubstring(const char *inputString, int start, int end) {
     return substring;
 }
 
-void splitStringBySpace( char *inputString, char *tokens[],int *tokenCount) {
-    // Make a copy of the input string because strtok modifies the string
-    *tokenCount = 0;
-    char *token = strtok(inputString, " ");
-
-    // Iterate through the tokens and print them
-    while (token != NULL) {
-        tokens[*tokenCount] = token; 
-        printf(token);
-        (*tokenCount++);
-        token = strtok(NULL, " ");
-    }
-}
-
 
 
 int main(int argc, char* argv[]) {
-    int hi = 0;
-    char string[1000];
-    char tempsentence[100];
-    char sentence[100];
+
+    char tempsentence[1000];
+    char sentence[1000];
     char *tokens[50];
     int tokencount = 0;
     
@@ -74,80 +61,135 @@ int main(int argc, char* argv[]) {
     char source[100];
     char data[100];
     char clientid[100];
+    strcpy(clientid, "-1");
+    bool exit = false;
+    while(!exit){
+        printf("Enter a sentence: ");
+        fgets(sentence, sizeof(sentence), stdin);   
 
-    printf("Enter a sentence: ");
-    fgets(sentence, sizeof(sentence), stdin);   
+        //splitStringBySpace(sentence, tokens, &tokencount);
+        tokencount = 0;
+        char *token = strtok(sentence, " ");
 
-     //splitStringBySpace(sentence, tokens, &tokencount);
-    tokencount = 0;
-    char *token = strtok(sentence, " ");
+        // Iterate through the tokens and print them
+        while (token != NULL) {
+            tokens[tokencount] = token; 
+            
+            (tokencount++);
+            token = strtok(NULL, " ");
+        }
+        for(int i =0; i < tokencount; i++){
+            printf("%s \n",tokens[i]);
+        }
 
-    // Iterate through the tokens and print them
-    while (token != NULL) {
-        tokens[tokencount] = token; 
         
-        (tokencount++);
-        token = strtok(NULL, " ");
-    }
-    for(int i =0; i < tokencount; i++){
-        printf("%s \n",tokens[i]);
-    }
-
-    if(strcpy(extractSubstring(sentence, 0, 6), tempsentence) && strcmp(tempsentence,  "/login " && tokencount == 5)){
-        type = 0;
-       
-        //Client id = tokens[1];
-        //client password = tokens[2];
-
-        //After LOGIN ACK
-        //strcpy(clientid, tokens[1]);
-
-        printf("login");
-    }
-    else if(strcpy(extractSubstring(sentence, 0, 7), tempsentence) && strcmp(tempsentence,  "/logout ") && tokencount == 1){
-        printf("logout");
-        type = 3;
-        //assume exit
-
-    }
-    else if(strcpy(extractSubstring(sentence, 0, 12), tempsentence) && strcmp(tempsentence,  "/joinsession ")&& tokencount == 2){
-        printf("join Session");
-        type = 4;
-        strcpy(data, tokens[1]);
-        //Send message to 
-        //
-    }
-    else if(strcpy(extractSubstring(sentence, 0, 13), tempsentence) && strcmp(tempsentence,  "/leavesession ")&& tokencount == 1){
-        printf("leave session");
-        type = 7;
-        //
-    }
-    else if(strcpy(extractSubstring(sentence, 0, 14), tempsentence) && strcmp(tempsentence,  "/createsession ")&& tokencount == 2){
-        printf("create session");
-        type = 8;
-        //
-    }
-    else if(strcpy(extractSubstring(sentence, 0, 5), tempsentence) && strcmp(tempsentence,  "/list ")&& tokencount == 1){
-        type = 11;
-        printf("list");
+        if(!strcmp(tokens[0],"/login")){
+            if(strcmp(clientid, "-1")){
+                printf("logged in already");
+            }
+            else if(tokencount != 5){
+                printf("wrong num of arguments");
+            }
+            else{
+                type = 0;
         
-        strcpy(source, clientid)
-        //Server needs to check which clients are in there session and returns the related clients
-        //And list all the related Clients
-    }
-    else if(strcpy(extractSubstring(sentence, 0, 5), tempsentence) && strcmp(tempsentence,  "/quit ")&& tokencount == 1){
-        printf("quit");
-        type = 3;
-        //Send message to server to disconnect this client to server
-        //Send client and quit
-        exit(1);
-    }
-    else if (tokencount == 1){
-        type = 10;
-        printf("this is text");
+                //Client id = tokens[1];
+                //client password = tokens[2];
+
+                //After LOGIN ACK
+                //strcpy(clientid, tokens[1]);
+
+                printf("login");
+            }
+            
+        }
+        else if(!strcmp(extractSubstring(sentence, 0, 6), "/logout")){
+            if(!strcmp(clientid, "-1")){
+                printf("not logged in");
+            }
+            else if(tokencount != 1){
+                printf("wrong num of arguments");
+            }
+            else{
+                printf("logout");
+            
+            
+                type = 3;
+                //assume exit
+            }
+            
+
+        }
+        else if(!strcmp(tokens[0],  "/joinsession")){
+            if(tokencount != 2){
+                printf("wrong num of arguments");
+            }
+            else{
+                printf("join Session");
+                type = 4;
+                strcpy(data, tokens[1]);
+                //Send message to 
+                //
+            }
+            
+        }
+        else if(!strcmp(extractSubstring(sentence, 0, 12),  "/leavesession")){
+            if(tokencount != 1){
+                printf("wrong num of arguments");
+            }
+            else{
+                printf("leave session");
+                type = 7;
+                //
+            }
+            
+        }
+        else if(!strcmp(tokens[0],  "/createsession")){
+            if(tokencount != 2){
+                printf("wrong num of arguments");
+            }
+            else{
+                printf("create session");
+                type = 8;
+                //
+            }
+            
+        }
+        else if(!strcmp(extractSubstring(sentence, 0, 4),  "/list")){
+            if(tokencount != 1){
+                printf("wrong num of arguments");
+            }
+            else{
+                type = 11;
+                printf("list");
+                
+                strcpy(source, clientid);
+                //Server needs to check which clients are in there session and returns the related clients
+                //And list all the related Clients
+            }
+        }
+        else if(!strcmp(extractSubstring(sentence, 0, 4),  "/quit")){
+            if(tokencount != 1){
+                printf("wrong num of arguments");
+            }
+            else{
+                printf("quit");
+                type = 3;
+                //Send message to server to disconnect this client to server
+                //Send client and quit
+                exit = true;
+            } 
+        }
+        else if (tokencount == 1){
+            //Message
+            type = 10;
+            printf("this is text");
+        }
+        else{
+            printf("error");
+        }
     }
 
-    
 
 
 

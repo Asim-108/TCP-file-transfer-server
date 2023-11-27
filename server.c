@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+
+
 #define MAX_NAME 100
 #define MAX_DATA 1000
 
@@ -24,6 +26,18 @@ typedef struct message
     unsigned char source[MAX_NAME];
     unsigned char data[MAX_DATA];
 }Message;
+
+struct StringPair{
+    char username[100];
+    char password[100];
+};
+
+struct Session_struct{
+    char Session_number[100];
+    char *Usernames[100];
+    int num_people;
+
+};
 
 void chat(int connfd){
     char buff[MAX_DATA]; 
@@ -54,6 +68,23 @@ void chat(int connfd){
 }
 
 int main(){
+
+    struct StringPair Login_info[100] = {
+        {"Andrew", "password"},
+        {"Asim", "test"},
+        {"temp", "testing"},
+    };
+    int number_sessions = 3;
+    struct Session_struct Session[10];
+    strcpy(Session[0].Session_number, "0");
+    strcpy(Session[1].Session_number, "1");
+    strcpy(Session[2].Session_number, "2");
+
+    
+    Session[0].num_people = 0;
+    Session[1].num_people = 0;
+    Session[2].num_people = 0;
+
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
 
