@@ -53,11 +53,11 @@ int main(){
     struct sockaddr_in servaddr, cli;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd == -1){
-        printf("socket creation failed");
+        printf("socket creation failed\n");
         exit(0);
     }
     else{
-        printf("socket successfully created");
+        printf("socket successfully created\n");
     }
     bzero(&servaddr, sizeof(servaddr));
 
@@ -67,11 +67,11 @@ int main(){
     servaddr.sin_port = htons(PORT);
 
     if(connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0){
-        printf("failed to establish connection with server");
+        printf("failed to establish connection with server\n");
         exit(0);
     }
     else{
-        printf("established connection with server");
+        printf("established connection with server\n");
     }
 
     //function for chat

@@ -59,11 +59,11 @@ int main(){
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd == -1){
-        printf("socket creation failed");
+        printf("socket creation failed\n");
         exit(0);
     }
     else{
-        printf("socket created successfully");
+        printf("socket created successfully\n");
     }
     bzero(&servaddr, sizeof(servaddr));
 
