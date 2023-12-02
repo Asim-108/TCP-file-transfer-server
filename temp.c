@@ -66,11 +66,9 @@ int main(int argc, char* argv[]) {
     while(!exit){
         printf("Enter a sentence: ");
         fgets(sentence, sizeof(sentence), stdin);   
-
         //splitStringBySpace(sentence, tokens, &tokencount);
         tokencount = 0;
         char *token = strtok(sentence, " ");
-
         // Iterate through the tokens and print them
         while (token != NULL) {
             tokens[tokencount] = token; 

@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS1 = -Wall -g -c
 CFLAGS2 = -g
 
-all: client server temp
+all: client server temp tempserver
 
 # Target for the "deliver" executable.
 client: client.o
@@ -16,6 +16,9 @@ server: server.o
 temp: temp.o
 	${CC} ${CFLAGS2} -o temp temp.o
 
+temp: tempserver.o
+	${CC} ${CFLAGS2} -o tempserver tempserver.o
+
 # Compile the "deliver" source file to an object.
 client.o: client.c
 	${CC} ${CFLAGS1} -o client.o client.c
@@ -27,6 +30,9 @@ server.o: server.c
 # Compile the "server" source file to an object.
 temp.o: temp.c
 	${CC} ${CFLAGS1} -o temp.o temp.c
+
+temp: tempserver.c
+	${CC} ${CFLAGS2} -o tempserver tempserver.c
 
 clean:
 	rm -f deliver server temp
