@@ -62,7 +62,7 @@ void addNode(struct Node** head, const char* data) {
 }
 
 
-void deletePerson_from_session(struct MultiLinkedList* multiList, const char* listName, const char* data) {
+bool  deletePerson_from_session(struct MultiLinkedList* multiList, const char* listName, const char* data) {
     for (int i = 0; i < multiList->numLists; ++i) {
         if (strcmp(multiList->names[i], listName) == 0) {
             // Found the named list, proceed to delete node
@@ -82,7 +82,7 @@ void deletePerson_from_session(struct MultiLinkedList* multiList, const char* li
 
                     free(current->data);
                     free(current);
-                    return;
+                    return true;
                 }
 
                 prev = current;
@@ -91,7 +91,7 @@ void deletePerson_from_session(struct MultiLinkedList* multiList, const char* li
 
             // Data not found in the list
             printf("Error: Node with data '%s' not found in the list '%s'\n", data, listName);
-            return;
+            return false;
         }
     }
 
@@ -107,16 +107,17 @@ void create_session(struct MultiLinkedList* multiList, const char* name) {
     multiList->names[multiList->numLists - 1] = strdup(name);
 }
 
-void Join_session(struct MultiLinkedList* multiList, const char* listName, const char* data) {
+bool Join_session(struct MultiLinkedList* multiList, const char* listName, const char* data) {
     for (int i = 0; i < multiList->numLists; ++i) {
         if (strcmp(multiList->names[i], listName) == 0) {
             // Found the named list, add node to it
             addNode(&multiList->lists[i], data);
-            return;
+            return true;
         }
     }
     // If the named list is not found, you can handle the error or provide a message
     printf("Error: List with name '%s' not found\n", listName);
+    return false;
 }
 
 // void displayList(struct Node* head) {
@@ -195,12 +196,21 @@ struct StringPair{
     char password[100];
 };
 
-struct Session_struct{
-    char Session_number[100];
-    char *Usernames[100];
-    int num_people;
-
+struct StringPair Login_info[100] = {
+    {"Andrew", "password"},
+    {"Asim", "test"},
+    {"temp", "testing"},
 };
+
+bool isValidLogin(const char *username, const char *password) {
+    for (int i = 0; i < sizeof(Login_info) / sizeof(Login_info[0]); i++) {
+        if (strcmp(Login_info[i].username, username) == 0 &&
+            strcmp(Login_info[i].password, password) == 0) {
+            return true; // Valid login
+        }
+    }
+    return false; // Invalid login
+}
 
 //converting client text into message struct
 Message
@@ -373,7 +383,7 @@ char* messageToText(Message message0){
     return text;
 }
 
-void chat(int connfd){
+/*void chat(int connfd){
     char buff[sizeof(Message)]; 
     int n; 
     // infinite loop for chat 
@@ -399,25 +409,93 @@ void chat(int connfd){
             break; 
         } 
     } 
+}*/
+
+void chat(int connfd, struct MultiLinkedList* Session_list){
+    char buff[sizeof(Message)]; 
+    int n; 
+    // infinite loop for chat 
+    for (;;) { 
+        bzero(buff, sizeof(Message)); 
+   
+        // read the message from client and copy it in buffer 
+        read(connfd, buff, sizeof(buff)); 
+        // print buffer which contains the client contents 
+        printf("From client: %s\t To client : ", buff); 
+
+        Message* Client_message = stringToMessage(buff);
+        //login
+        if(Client_message->type == 0){
+            //change username and password
+            char* UserID = "hello";
+            char* password = "password";
+             if (isValidLogin(UserID, password)) {
+                printf("Login successful\n");
+                //wrtie login Ack
+            } else {
+                printf("Invalid username or password\n");
+                //wrtie login NAck
+            }
+        }
+        //exit
+        else if(Client_message->type == 3){
+            printf("Server Exit\n"); 
+            break;
+        }
+        //join
+        else if(Client_message->type == 4){
+            if(Join_session(&Session_list, Client_message->data, Client_message->source)){
+                printf("Join Session successful\n");
+                //write
+                //Sucessfully joined session 
+            }
+            else{
+                printf("Join Session Unsuccessful\n");
+                //write 
+                //Failed to send session
+            }
+        }
+        //Leave Session
+        else if(Client_message->type == 7){
+            if(deletePerson_from_session(&Session_list, "1", "One")){
+                //Successfully left session 
+                printf("Left Session successful\n");
+            }
+            else{
+                //Did not leave session
+                printf("DID NOT Leave Session successful\n");
+            }
+        }
+        //New_session
+        else if(Client_message->type == 8){
+            create_session(&Session_list, Client_message->data);
+        }
+        //Message
+        else if(Client_message->type == 10){
+            //
+            printf("idk what to do");
+        }
+        //Query/List
+        else if(Client_message->type == 11){
+            char *result = list_of_session(&Session_list);
+             // and send that buffer to client 
+            write(connfd, result, sizeof(result)); 
+            //write list to client and print on there side
+        }
+
+        
+       
+   
+        
+    } 
 }
 
 int main(){
-
-    struct StringPair Login_info[100] = {
-        {"Andrew", "password"},
-        {"Asim", "test"},
-        {"temp", "testing"},
-    };
-    int number_sessions = 3;
-    struct Session_struct Session[10];
-    strcpy(Session[0].Session_number, "0");
-    strcpy(Session[1].Session_number, "1");
-    strcpy(Session[2].Session_number, "2");
-
+    struct MultiLinkedList Session_list;
+    initalize_sessions(&Session_list, 3);
     
-    Session[0].num_people = 0;
-    Session[1].num_people = 0;
-    Session[2].num_people = 0;
+    
+    
 
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -463,7 +541,7 @@ int main(){
         printf("server accept the client\n"); 
     }
     // Function for chatting between client and server 
-    chat(connfd); 
+    chat(connfd, &Session_list); 
    
     // After chatting close the socket 
     close(sockfd); 

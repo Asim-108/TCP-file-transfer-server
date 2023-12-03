@@ -34,6 +34,28 @@ struct MultiLinkedList {
     int numLists;
 };
 
+struct StringPair{
+    char username[100];
+    char password[100];
+};
+
+//Login Info
+struct StringPair Login_info[100] = {
+    {"Andrew", "password"},
+    {"Asim", "test"},
+    {"temp", "testing"},
+};
+
+bool isValidLogin(const char *username, const char *password) {
+    for (int i = 0; i < sizeof(Login_info) / sizeof(Login_info[0]); i++) {
+        if (strcmp(Login_info[i].username, username) == 0 &&
+            strcmp(Login_info[i].password, password) == 0) {
+            return true; // Valid login
+        }
+    }
+    return false; // Invalid login
+}
+
 void initalize_sessions(struct MultiLinkedList* multiList, int numLists) {
     multiList->numLists = numLists;
     multiList->lists = (struct Node**)malloc(numLists * sizeof(struct Node*));
@@ -188,7 +210,7 @@ int main() {
     create_session(&Session_list, "FirstList");
 
 
-    Join_session(&Session_list, "FirstList", "Four");
+    Join_session(&Session_list, "Firstist", "Four");
     Join_session(&Session_list, "FirstList", "Five");
     deletePerson_from_session(&Session_list, "1", "One");
     
@@ -196,6 +218,15 @@ int main() {
     printf("%s", result);
 
     free_sessions(&Session_list);
+
+    const char *inputUsername = "Andrew";
+    const char *inputPassword = "pasword";
+
+    if (isValidLogin(inputUsername, inputPassword)) {
+        printf("Login successful\n");
+    } else {
+        printf("Invalid username or password\n");
+    }
 
     return 0;
 }
