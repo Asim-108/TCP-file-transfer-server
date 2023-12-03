@@ -202,6 +202,177 @@ struct Session_struct{
 
 };
 
+//converting client text into message struct
+Message
+textToMessage (char *text, char *source)
+{
+  //integer defining message type
+  int type;
+  int args = 0;
+  //choose what type of message it is
+  if (strncmp (text, "/login", 6) == 0)
+    {
+      type = 0;
+      args = 3;
+    }
+  else if (strncmp (text, "/logout", 7) == 0)
+    {
+      type = 3;
+    }
+  else if (strncmp (text, "/joinsession", 12) == 0)
+    {
+      type = 4;
+      args = 2;
+    }
+  else if (strncmp (text, "/leavesession", 13) == 0)
+    {
+      type = 7;
+    }
+  else if (strncmp (text, "/createsession", 14) == 0)
+    {
+      type = 8;
+      args = 2;
+    }
+  else if (strncmp (text, "/list", 5) == 0)
+    {
+      type = 11;
+    }
+  else if (strncmp (text, "/quit", 5) == 0)
+    {
+      type = 3;
+    }
+  else
+    {
+      type = 10;
+    }
+
+
+  Message ret;
+
+  ret.type = type;
+  
+  strcpy(ret.data, "");
+
+  if (args != 0){
+    char *token = strtok (text, " ");
+
+    for (int i = 0; i < args; i++){
+    	  if (i == 0){
+    	      //first argument, command so do nothing
+    	    }
+    	  else{
+    	      strcat (ret.data, token);
+    	      strcat(ret.data, " ");
+    	    }
+    	  token = strtok (NULL, " ");
+    }
+  }
+  else if(type == 10){
+    strcpy(ret.data, text);
+  }
+  ret.size = sizeof(ret.data);
+  strcpy(ret.source, source);
+  
+  return ret;
+}
+
+char *
+messageToString (Message message0)
+{
+    int strSize[] = { 0, 0 };
+    double temp;
+    //if message is of type 0, special case since we can't count digits in it
+    if(message0.type != 0){
+        temp = (double) message0.type;
+        while (temp >= 1){
+            temp /= 10;
+            strSize[0]++;
+        }
+  }
+  else{
+      strSize[0] = 1;
+  }
+  
+    temp = (double) message0.size;
+    while (temp >= 1)
+    {
+      temp /= 10;
+      strSize[1]++;
+    }
+
+  char *str =
+    (char *)
+    malloc ((strSize[0] + strSize[1] + strlen (message0.source) +
+	     strlen (message0.data) + 3) * sizeof (char));
+
+  char buffer0[strSize[0]];
+  char buffer1[strSize[1]];
+
+  snprintf (buffer0, strSize[0] + 1, "%d", message0.type);
+  snprintf (buffer1, strSize[1] + 1, "%d", message0.size);
+
+  strcat (str, buffer0);
+  strcat (str, ":");
+  strcat (str, buffer1);
+  strcat (str, ":");
+  strcat (str, message0.source);
+  strcat (str, ":");
+  strcat (str, message0.data);
+  strcat (str, "\0");
+
+  return str;
+}
+
+//clients and server
+Message* stringToMessage(char* str){
+    char* token = strtok(str, ":");
+
+    int count = 3;
+    
+    //if type has valid data field
+    if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
+    || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
+    || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+    || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
+        count = 4;
+    }
+    
+    Message* message0 = (Message*) malloc(sizeof(Message));
+    
+    for(int i = 0; i < count; i++){
+        if(i == 0){
+            message0->type = atoi(token);
+        }
+        else if(i == 1){
+            message0->size = atoi(token);
+        }
+        else if(i == 2){
+            //initialize memory
+            strcpy(message0->source, "");
+            strcpy(message0->source, token);
+        }
+        else{
+            strcpy(message0->source, "");
+            strcpy(message0->data, token);
+        }
+        token = strtok(NULL, ":");
+    }
+    
+    return message0;
+}
+
+char* messageToText(Message message0){
+    if (message0.type != 0 || message0.type != 2 || message0.type != 4
+    || message0.type != 5 || message0.type != 6 || message0.type != 9
+    || message0.type != 10 || message0.type != 12){
+        //no message to display, return
+        return;
+    }
+    
+    char* text = message0.data;
+    return text;
+}
+
 void chat(int connfd){
     char buff[sizeof(Message)]; 
     int n; 

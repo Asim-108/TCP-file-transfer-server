@@ -176,6 +176,56 @@ messageToString (Message message0)
   return str;
 }
 
+//clients and server
+Message* stringToMessage(char* str){
+    char* token = strtok(str, ":");
+
+    int count = 3;
+    
+    //if type has valid data field
+    if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
+    || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
+    || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+    || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
+        count = 4;
+    }
+    
+    Message* message0 = (Message*) malloc(sizeof(Message));
+    
+    for(int i = 0; i < count; i++){
+        if(i == 0){
+            message0->type = atoi(token);
+        }
+        else if(i == 1){
+            message0->size = atoi(token);
+        }
+        else if(i == 2){
+            //initialize memory
+            strcpy(message0->source, "");
+            strcpy(message0->source, token);
+        }
+        else{
+            strcpy(message0->source, "");
+            strcpy(message0->data, token);
+        }
+        token = strtok(NULL, ":");
+    }
+    
+    return message0;
+}
+
+char* messageToText(Message message0){
+    if (message0.type != 0 || message0.type != 2 || message0.type != 4
+    || message0.type != 5 || message0.type != 6 || message0.type != 9
+    || message0.type != 10 || message0.type != 12){
+        //no message to display, return
+        return;
+    }
+    
+    char* text = message0.data;
+    return text;
+}
+
 void chat(int sockfd){
     char buff[sizeof(Message)];
     int n;
