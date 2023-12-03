@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <stdbool.h>
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -226,56 +227,154 @@ char* messageToText(Message message0){
     return text;
 }
 
-void chat(int sockfd){
-    char buff[sizeof(Message)];
-    int n;
-    for(;;){
-        bzero(buff, sizeof(buff));
-        printf("Enter string to send: ");
-        n = 0;
-        while((buff[n++] = getchar()) != '\n')
-            ;
-        write(sockfd, buff, sizeof(buff));
-        bzero(buff, sizeof(buff));
-        read(sockfd, buff, sizeof(buff));
-        printf("Server sent: %s\n", buff);
-        if((strncmp(buff, "exit", 4)) == 0){
-            printf("Client exit\n");
-            break;
-        }
+void chat(int sockfd, char* source){
+  char buff[sizeof(Message)];
+  int n;
+  char sentence[1000];
+  char *tokens[50];
+  int tokencount = 0;
+
+  for(;;){
+    bzero(buff, sizeof(buff));
+    printf("Enter string to send: ");
+    n = 0;
+
+    // while((buff[n++] = getchar()) != '\n')
+    //     ;
+
+    fgets(sentence, sizeof(sentence), stdin);
+
+    char text[sizeof(sentence)];
+    strcpy(text, sentence);
+
+    //splitStringBySpace(sentence, tokens, &tokencount);
+    tokencount = 0;
+    char *token = strtok(sentence, " ");
+    // Iterate through the tokens and print them
+    while (token != NULL) {
+      tokens[tokencount] = token; 
+      
+      (tokencount++);
+      token = strtok(NULL, " ");
     }
+    for(int i =0; i < tokencount; i++){
+      printf("%s \n",tokens[i]);
+    }
+
+    if(strncmp(token[0], "/login", 6) == 0){
+      //already logged in
+      continue;
+    }
+
+
+    write(sockfd, buff, sizeof(buff));
+    bzero(buff, sizeof(buff));
+    read(sockfd, buff, sizeof(buff));
+    printf("Server sent: %s\n", buff);
+    if((strncmp(buff, "exit", 4)) == 0){
+      printf("Client exit\n");
+      break;
+    }
+  }
 }
 
 int main(){
-    int sockfd, connfd;
-    struct sockaddr_in servaddr, cli;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockfd == -1){
-        printf("socket creation failed\n");
-        exit(0);
+  int sockfd, connfd;
+  struct sockaddr_in servaddr, cli;
+
+  char input[1000];
+  char *tokens[50];
+  int tokencount = 0;
+
+  bool loggedIn = false;
+
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if(sockfd == -1){
+    printf("socket creation failed\n");
+    exit(0);
+  }
+  else{
+    printf("socket successfully created\n");
+  }
+  bzero(&servaddr, sizeof(servaddr));
+
+  printf("login to a server with /login\n");
+
+  fgets(input, sizeof(input), stdin);
+  char inputCopy[sizeof(input)];
+  strcpy(inputCopy, input);
+
+  while(!loggedIn){
+    //splitStringBySpace(sentence, tokens, &tokencount);
+    char *token = strtok(input, " ");
+    // Iterate through the tokens and print them
+    while (token != NULL) {
+      tokens[tokencount] = token; 
+      
+      (tokencount++);
+      token = strtok(NULL, " ");
+    }
+
+    //if not login command
+    if(strcmp(token[0], "/login") != 0){
+      printf("Invalid input, please login with /login\n");
+    }
+    else if(tokencount != 5){
+      printf("Wrong number of arguments for /login command\n");
     }
     else{
-        printf("socket successfully created\n");
-    }
-    bzero(&servaddr, sizeof(servaddr));
-
-    //assign IP, PORT
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    servaddr.sin_port = htons(PORT);
-
-    if(connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0){
-        printf("failed to establish connection with server\n");
-        exit(0);
-    }
-    else{
-        printf("established connection with server\n");
+      loggedIn = 1;
     }
 
-    //function for chat
-    chat(sockfd);
+    fgets(input, sizeof(input), stdin);
+    char inputCopy[sizeof(input)];
+    strcpy(inputCopy, input);
+  }
+  
 
-    //closing socket
-    close(sockfd);
+  //assign server IP, PORT using what client entered
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_addr.s_addr = inet_addr(tokens[4]);
+  servaddr.sin_port = htons(atoi(tokens[5]));
 
+  if(connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0){
+    printf("failed to establish connection with server\n");
+    exit(0);
+  }
+  else{
+    printf("established connection with server\n");
+  }
+
+  //try to login to the server
+
+  Message loginAttempt = textToMessage(inputCopy, tokens[1]);
+  char* buff = messageToText(loginAttempt);
+
+  write(sockfd, buff, sizeof(buff));
+  bzero(buff, sizeof(buff));
+  read(sockfd, buff, sizeof(buff));
+
+  Message* serverReply = stringToMessage(buff);
+
+  if(serverReply->type == 1){
+    printf("logged in successfully as: %s", tokens[1]);
+    char source[sizeof(tokens[1])];
+    strcpy(source, tokens[1]);
+    chat(sockfd, source);
+  }
+  else{
+    //not able to log in, server will tell why
+    printf("%s", serverReply->data);
+  }
+
+  //finished chatting OR unable to login at this point, exit program
+
+  //free dynamically allocated memory
+  free(buff);
+  free(serverReply);
+
+  //closing socket
+  close(sockfd);
+
+  return 0;
 }
