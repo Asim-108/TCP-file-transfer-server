@@ -236,7 +236,7 @@ void chat(int sockfd, char* source){
 
   for(;;){
     bzero(buff, sizeof(buff));
-    printf("Enter string to send: ");
+    printf("Enter message or command: ");
     n = 0;
 
     // while((buff[n++] = getchar()) != '\n')
@@ -262,19 +262,54 @@ void chat(int sockfd, char* source){
     }
 
     if(strncmp(token[0], "/login", 6) == 0){
-      //already logged in
+      printf("already logged in\n");
       continue;
     }
-
-
-    write(sockfd, buff, sizeof(buff));
+    //converting input text into Message struct
+    Message messageToSend = textToMessage(text, source);
+    //converting message struct into string with ":" seperations to send
+    char* sendBuff = messageToString(messageToSend);
+    //send to the server the message
+    write(sockfd, sendBuff, sizeof(sendBuff));
+    //freeing memory allocated for buffer to send
+    free(sendBuff);
     bzero(buff, sizeof(buff));
+    //receive reply from server
     read(sockfd, buff, sizeof(buff));
-    printf("Server sent: %s\n", buff);
-    if((strncmp(buff, "exit", 4)) == 0){
-      printf("Client exit\n");
+
+    //different response printed based on type of message server sent
+    Message* messageReceived = stringToMessage(buff);
+    if(messageReceived->type == 3){
+      printf("logout/exit from server\n");
       break;
     }
+    else if(messageReceived->type == 5){
+      printf("successfully joined session %s\n", messageReceived->data);
+    }
+    else if(messageReceived->type == 6){
+      printf("could not join the session %s\n", messageReceived->data);
+    }
+    else if(messageReceived->type == 9){
+      printf("successfully created session %s\n", messageReceived->data);
+    }
+    else if(messageReceived->type == 10){
+      printf("%s: %s\n", messageReceived->source, messageReceived->data);
+    }
+    else if(messageReceived->type == 11){
+      printf("list of sessions:\n %s\n", messageReceived->data);
+    }
+    else{
+      printf("UNEXPECTED MESSAGE TYPE FROM SERVER, ERROR");
+    }
+
+    free(messageReceived);
+
+
+    // printf("Server sent: %s\n", buff);
+    // if((strncmp(buff, "exit", 4)) == 0){
+    //   printf("Client exit\n");
+    //   break;
+    // }
   }
 }
 
