@@ -28,8 +28,156 @@ typedef struct message
     unsigned char data[MAX_DATA];
 }Message;
 
+char *extractSubstring(const char *inputString, int start, int end) {
+    if (inputString == NULL || start < 0 || end < start || end >= strlen(inputString)) {
+        return NULL; // Invalid input
+    }
+
+    // Calculate the length of the substring
+    int length = end - start + 1;
+
+    // Allocate memory for the substring
+    char *substring = (char *)malloc(length + 1); // +1 for null-terminator
+
+    if (substring == NULL) {
+        return NULL; // Memory allocation failed
+    }
+
+    // Copy characters from the original string to the substring
+    for (int i = 0; i < length; i++) {
+        substring[i] = inputString[start + i];
+    }
+
+    // Null-terminate the substring
+    substring[length] = '\0';
+
+    return substring;
+}
+
+//convert raw user input text into Message struct
+Message
+textToMessage (char *text, char *source)
+{
+  //integer defining message type
+  int type;
+  int args = 0;
+  //choose what type of message it is
+  if (strncmp (text, "/login", 6) == 0)
+    {
+      type = 0;
+      args = 3;
+    }
+  else if (strncmp (text, "/logout", 7) == 0)
+    {
+      type = 3;
+    }
+  else if (strncmp (text, "/joinsession", 12) == 0)
+    {
+      type = 4;
+      args = 2;
+    }
+  else if (strncmp (text, "/leavesession", 13) == 0)
+    {
+      type = 7;
+    }
+  else if (strncmp (text, "/createsession", 14) == 0)
+    {
+      type = 8;
+      args = 2;
+    }
+  else if (strncmp (text, "/list", 5) == 0)
+    {
+      type = 11;
+    }
+  else if (strncmp (text, "/quit", 5) == 0)
+    {
+      type = 3;
+    }
+  else
+    {
+      type = 10;
+    }
+
+
+  Message ret;
+
+  ret.type = type;
+  
+  strcpy(ret.data, "");
+
+  if (args != 0){
+    char *token = strtok (text, " ");
+
+    for (int i = 0; i < args; i++){
+    	  if (i == 0){
+    	      //first argument, command so do nothing
+    	    }
+    	  else{
+    	      strcat (ret.data, token);
+    	      strcat(ret.data, " ");
+    	    }
+    	  token = strtok (NULL, " ");
+    }
+  }
+  else if(type == 10){
+    strcpy(ret.data, text);
+  }
+  ret.size = sizeof(ret.data);
+  strcpy(ret.source, source);
+  
+  return ret;
+}
+
+//convert message struct to string with ":" to send with TCP
+char *
+messageToString (Message message0)
+{
+    int strSize[] = { 0, 0 };
+    double temp;
+    //if message is of type 0, special case since we can't count digits in it
+    if(message0.type != 0){
+        temp = (double) message0.type;
+        while (temp >= 1){
+            temp /= 10;
+            strSize[0]++;
+        }
+  }
+  else{
+      strSize[0] = 1;
+  }
+  
+    temp = (double) message0.size;
+    while (temp >= 1)
+    {
+      temp /= 10;
+      strSize[1]++;
+    }
+
+  char *str =
+    (char *)
+    malloc ((strSize[0] + strSize[1] + strlen (message0.source) +
+	     strlen (message0.data) + 3) * sizeof (char));
+
+  char buffer0[strSize[0]];
+  char buffer1[strSize[1]];
+
+  snprintf (buffer0, strSize[0] + 1, "%d", message0.type);
+  snprintf (buffer1, strSize[1] + 1, "%d", message0.size);
+
+  strcat (str, buffer0);
+  strcat (str, ":");
+  strcat (str, buffer1);
+  strcat (str, ":");
+  strcat (str, message0.source);
+  strcat (str, ":");
+  strcat (str, message0.data);
+  strcat (str, "\0");
+
+  return str;
+}
+
 void chat(int sockfd){
-    char buff[MAX_DATA];
+    char buff[sizeof(Message)];
     int n;
     for(;;){
         bzero(buff, sizeof(buff));

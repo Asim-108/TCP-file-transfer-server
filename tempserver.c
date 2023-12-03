@@ -112,14 +112,13 @@ void Join_session(struct MultiLinkedList* multiList, const char* listName, const
     printf("Error: List with name '%s' not found\n", listName);
 }
 
-void displayList(struct Node* head) {
-    while (head != NULL) {
-        printf("%s -> ", head->data);
-        head = head->next;
-    }
-    printf("NULL\n");
-}
-
+// void displayList(struct Node* head) {
+//     while (head != NULL) {
+//         printf("%s -> ", head->data);
+//         head = head->next;
+//     }
+//     printf("NULL\n");
+// }
 
 
 char* list_of_session(struct MultiLinkedList* multiList) {
