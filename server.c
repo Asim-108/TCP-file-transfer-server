@@ -15,7 +15,7 @@
 #define SA struct sockaddr
 
 //previously used define statements, subject to change
-#define PORT 8080
+#define PORT 8081
 #define MAXLINE 1024
 #define SERVERADDRESS "192.168.1.1"
 
@@ -708,11 +708,9 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
     } 
 }
 
-int main(){
+int main(int argc, char* argv[]){
     struct MultiLinkedList Session_list;
     initalize_sessions(&Session_list, 3);
-    
-    
     
 
     int sockfd, connfd, len;

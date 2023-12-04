@@ -112,14 +112,19 @@ textToMessage (char *text, char *source)
     char *token = strtok (text, " ");
 
     for (int i = 0; i < args; i++){
-    	  if (i == 0){
-    	      //first argument, command so do nothing
-    	    }
-    	  else{
-    	      strcat (ret.data, token);
-    	      strcat(ret.data, " ");
-    	    }
-    	  token = strtok (NULL, " ");
+      if (i == 0){
+          //first argument, command so do nothing
+        }
+      else{
+          if(token[strlen(token) - 1] == '\n'){
+            strncat(ret.data, token, strlen(token) - 1);
+          }
+          else{
+            strcat (ret.data, token);
+          }
+          strcat(ret.data, " ");
+        }
+      token = strtok (NULL, " ");
     }
   }
   else if(type == 10){
@@ -303,7 +308,7 @@ void chat(int sockfd, char* source){
       printf("%s \n",tokens[i]);
     }
 
-    if(strncmp(token[0], "/login", 6) == 0){
+    if(strncmp(tokens[0], "/login", 6) == 0){
       printf("already logged in\n");
       continue;
     }
@@ -463,7 +468,7 @@ int main(){
   Message serverReply = stringToMessage(buff);
 
   if(serverReply.type == 1){
-    printf("logged in successfully as: %s", tokens[1]);
+    printf("logged in successfully as: %s\n", tokens[1]);
     char source[sizeof(tokens[1])];
     strcpy(source, tokens[1]);
     chat(sockfd, source);
