@@ -21,6 +21,8 @@
 #define MAXLINE 1024
 #define SERVERADDRESS "192.168.1.1"
 
+// /login Asim test 128.100.13.54 8080
+
 typedef struct message
 {
     unsigned int type;
@@ -178,42 +180,81 @@ messageToString (Message message0)
 }
 
 //clients and server
-Message* stringToMessage(char* str){
-    char* token = strtok(str, ":");
+// Message* stringToMessage(char* str){
+//     char* token = strtok(str, ":");
 
-    int count = 3;
+//     int count = 3;
     
-    //if type has valid data field
-    if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
-    || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
-    || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
-    || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
-        count = 4;
+//     //if type has valid data field
+//     if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
+//     || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
+//     || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+//     || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
+//         count = 4;
+//     }
+    
+//     Message* message0 = (Message*) malloc(sizeof(Message));
+    
+//     for(int i = 0; i < count; i++){
+//         if(i == 0){
+//             message0->type = atoi(token);
+//         }
+//         else if(i == 1){
+//             message0->size = atoi(token);
+//         }
+//         else if(i == 2){
+//             //initialize memory
+//             strcpy(message0->source, "");
+//             strcpy(message0->source, token);
+//         }
+//         else{
+//             strcpy(message0->source, "");
+//             strcpy(message0->data, token);
+//         }
+//         token = strtok(NULL, ":");
+//     }
+    
+//     return message0;
+// }
+
+Message stringToMessage(char* str){
+  char* token = strtok(str, ":");
+
+  int count = 3;
+  
+  //if type has valid data field
+  if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
+  || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
+  || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+  || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
+    count = 4;
+  }
+  
+  Message message0;
+  
+  for(int i = 0; i < count; i++){
+    if(i == 0){
+      message0.type = atoi(token);
     }
-    
-    Message* message0 = (Message*) malloc(sizeof(Message));
-    
-    for(int i = 0; i < count; i++){
-        if(i == 0){
-            message0->type = atoi(token);
-        }
-        else if(i == 1){
-            message0->size = atoi(token);
-        }
-        else if(i == 2){
-            //initialize memory
-            strcpy(message0->source, "");
-            strcpy(message0->source, token);
-        }
-        else{
-            strcpy(message0->source, "");
-            strcpy(message0->data, token);
-        }
-        token = strtok(NULL, ":");
+    else if(i == 1){
+      message0.size = atoi(token);
     }
-    
-    return message0;
+    else if(i == 2){
+      //initialize memory
+      strcpy(message0.source, "");
+      strcpy(message0.source, token);
+    }
+    else{
+      strcpy(message0.data, "");
+      strcpy(message0.data, token);
+    }
+    token = strtok(NULL, ":");
+  }
+  
+  return message0;
 }
+
+
 
 char* messageToText(Message message0){
     if (message0.type != 0 || message0.type != 2 || message0.type != 4
@@ -252,7 +293,8 @@ void chat(int sockfd, char* source){
     char *token = strtok(sentence, " ");
     // Iterate through the tokens and print them
     while (token != NULL) {
-      tokens[tokencount] = token; 
+      // tokens[tokencount] = token; 
+      strcpy(tokens[tokencount], token);
       
       (tokencount++);
       token = strtok(NULL, " ");
@@ -278,24 +320,24 @@ void chat(int sockfd, char* source){
     read(sockfd, buff, sizeof(buff));
 
     //different response printed based on type of message server sent
-    Message* messageReceived = stringToMessage(buff);
-    if(messageReceived->type == 3){
+    Message messageReceived = stringToMessage(buff);
+    if(messageReceived.type == 3){
       printf("logout/exit from server\n");
       break;
     }
-    else if(messageReceived->type == 5){
-      printf("successfully joined session %s\n", messageReceived->data);
+    else if(messageReceived.type == 5){
+      printf("successfully joined session %s\n", messageReceived.data);
     }
-    else if(messageReceived->type == 6){
-      printf("could not join the session %s\n", messageReceived->data);
+    else if(messageReceived.type == 6){
+      printf("could not join the session %s\n", messageReceived.data);
     }
-    else if(messageReceived->type == 9){
-      printf("successfully created session %s\n", messageReceived->data);
+    else if(messageReceived.type == 9){
+      printf("successfully created session %s\n", messageReceived.data);
     }
-    else if(messageReceived->type == 10){
+    else if(messageReceived.type == 10){
       //message received from a host, check if it is for us
 
-      char* token = strtok(messageReceived->data, "~");
+      char* token = strtok(messageReceived.data, "~");
       char* prev;
       bool displayMessage = false;
 
@@ -307,17 +349,15 @@ void chat(int sockfd, char* source){
         token = strtok(NULL, "~");
       }
       if(displayMessage){
-        printf("%s: %s\n", messageReceived->source, messageReceived->data);
+        printf("%s: %s\n", messageReceived.source, messageReceived.data);
       }
     }
-    else if(messageReceived->type == 11){
-      printf("list of sessions:\n %s\n", messageReceived->data);
+    else if(messageReceived.type == 11){
+      printf("list of sessions:\n %s\n", messageReceived.data);
     }
     else{
       printf("UNEXPECTED MESSAGE TYPE FROM SERVER, ERROR");
     }
-
-    free(messageReceived);
 
 
     // printf("Server sent: %s\n", buff);
@@ -333,7 +373,7 @@ int main(){
   struct sockaddr_in servaddr, cli;
 
   char input[1000];
-  char *tokens[50];
+  char tokens[50][50];
   int tokencount = 0;
 
   bool loggedIn = false;
@@ -359,14 +399,16 @@ int main(){
     char *token = strtok(input, " ");
     // Iterate through the tokens and print them
     while (token != NULL) {
-      tokens[tokencount] = token; 
+      
+      // tokens[tokencount] = token; 
+      strcpy(tokens[tokencount], token);
       
       (tokencount++);
       token = strtok(NULL, " ");
     }
 
     //if not login command
-    if(strcmp(token[0], "/login") != 0){
+    if(strcmp(tokens[0], "/login") != 0){
       printf("Invalid input, please login with /login\n");
 
       tokencount = 0;
@@ -392,8 +434,8 @@ int main(){
 
   //assign server IP, PORT using what client entered
   servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = inet_addr(tokens[4]);
-  servaddr.sin_port = htons(atoi(tokens[5]));
+  servaddr.sin_addr.s_addr = inet_addr(tokens[3]);
+  servaddr.sin_port = htons(atoi(tokens[4]));
 
   if(connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0){
     printf("failed to establish connection with server\n");
@@ -409,15 +451,15 @@ int main(){
   char* sendBuff = messageToString(loginAttempt);
 
   write(sockfd, sendBuff, sizeof(sendBuff));
-  free(sendBuff);
+  // free(sendBuff);
 
   char buff[sizeof(Message)];
   bzero(buff, sizeof(buff));
   read(sockfd, buff, sizeof(buff));
 
-  Message* serverReply = stringToMessage(buff);
+  Message serverReply = stringToMessage(buff);
 
-  if(serverReply->type == 1){
+  if(serverReply.type == 1){
     printf("logged in successfully as: %s", tokens[1]);
     char source[sizeof(tokens[1])];
     strcpy(source, tokens[1]);
@@ -425,14 +467,10 @@ int main(){
   }
   else{
     //not able to log in, server will tell why
-    printf("%s", serverReply->data);
+    printf("%s", serverReply.data);
   }
 
   //finished chatting OR unable to login at this point, exit program
-
-  //free dynamically allocated memory
-  free(buff);
-  free(serverReply);
 
   //closing socket
   close(sockfd);

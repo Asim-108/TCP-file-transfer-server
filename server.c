@@ -20,15 +20,9 @@
 #define SERVERADDRESS "192.168.1.1"
 
 // Define the structure for a node in the linked list
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <errno.h>
 
 struct Node {
     char* data;  // Change the data type to char*
@@ -428,42 +422,81 @@ messageToString (Message message0)
 }
 
 //clients and server
-Message* stringToMessage(char* str){
-    char* token = strtok(str, ":");
+// Message* stringToMessage(char* str){
+//     char* token = strtok(str, ":");
 
-    int count = 3;
+//     int count = 3;
     
-    //if type has valid data field
-    if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
-    || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
-    || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
-    || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
-        count = 4;
+//     //if type has valid data field
+//     if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
+//     || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
+//     || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+//     || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
+//         count = 4;
+//     }
+    
+//     Message* message0 = (Message*) malloc(sizeof(Message));
+    
+//     for(int i = 0; i < count; i++){
+//         if(i == 0){
+//             message0->type = atoi(token);
+//         }
+//         else if(i == 1){
+//             message0->size = atoi(token);
+//         }
+//         else if(i == 2){
+//             //initialize memory
+//             strcpy(message0->source, "");
+//             strcpy(message0->source, token);
+//         }
+//         else{
+//             strcpy(message0->source, "");
+//             strcpy(message0->data, token);
+//         }
+//         token = strtok(NULL, ":");
+//     }
+    
+//     return message0;
+// }
+
+
+Message stringToMessage(char* str){
+  char* token = strtok(str, ":");
+
+  int count = 3;
+  
+  //if type has valid data field
+  if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
+  || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
+  || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+  || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
+    count = 4;
+  }
+  
+  Message message0;
+  
+  for(int i = 0; i < count; i++){
+    if(i == 0){
+      message0.type = atoi(token);
     }
-    
-    Message* message0 = (Message*) malloc(sizeof(Message));
-    
-    for(int i = 0; i < count; i++){
-        if(i == 0){
-            message0->type = atoi(token);
-        }
-        else if(i == 1){
-            message0->size = atoi(token);
-        }
-        else if(i == 2){
-            //initialize memory
-            strcpy(message0->source, "");
-            strcpy(message0->source, token);
-        }
-        else{
-            strcpy(message0->source, "");
-            strcpy(message0->data, token);
-        }
-        token = strtok(NULL, ":");
+    else if(i == 1){
+      message0.size = atoi(token);
     }
-    
-    return message0;
+    else if(i == 2){
+      //initialize memory
+      strcpy(message0.source, "");
+      strcpy(message0.source, token);
+    }
+    else{
+      strcpy(message0.data, "");
+      strcpy(message0.data, token);
+    }
+    token = strtok(NULL, ":");
+  }
+  
+  return message0;
 }
+
 
 char* messageToText(Message message0){
     if (message0.type != 0 || message0.type != 2 || message0.type != 4
@@ -513,15 +546,52 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         bzero(buff, sizeof(Message)); 
    
         // read the message from client and copy it in buffer 
-        read(connfd, buff, sizeof(buff)); 
-        // print buffer which contains the client contents 
-        printf("From client: %s\t To client : ", buff); 
 
-        Message* Client_message = stringToMessage(buff);
+        // int flags = fcntl(connfd, F_GETFL, 0);
+        // fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
+
+        // int bytes_received = 0;
+        // int bytes_expected = sizeof(buff);
+
+        // while(bytes_received < bytes_expected){
+        //     // ssize_t bytes = read(connfd, buff + bytes_received, bytes_expected - bytes_received);
+        //     ssize_t bytes = recv(connfd, buff + bytes_received, bytes_expected - bytes_received, 0);
+        //     // if(bytes < 0){
+        //     //     if(errno == EAGAIN || errno == EWOULDBLOCK){
+        //     //         perror("i dont know what to do here");
+        //     //     }
+        //     //     else{
+        //     //         perror("read");
+        //     //     }
+        //     // }
+        //     // else if(bytes == 0){
+        //     //     break;
+        //     // }
+        //     bytes_received += bytes;            
+        // }
+
+        // int total_received = 0;
+        // int bytes_received;
+
+        // while ((bytes_received = recv(connfd, buff + total_received, sizeof(buff) - total_received, 0)) > 0) {
+        //     total_received += bytes_received;
+
+        //     // Check for end of message (e.g., newline character)
+        //     if (buff[total_received - 1] == '\n') {
+        //         break;
+        //     }
+        // }
+
+        read(connfd, buff, 100); 
+
+        // print buffer which contains the client contents 
+        printf("From client: %s\t To client : ", buff);
+
+        Message Client_message = stringToMessage(buff);
         //login
-        if(Client_message->type == 0){
+        if(Client_message.type == 0){
             //change username and password
-            char *inputCopy = strdup(Client_message->data);
+            char *inputCopy = strdup(Client_message.data);
             char* UserID = strtok(inputCopy, " ");;
             char* password = strtok(NULL, " ");
              if (isValidLogin(UserID, password)) {
@@ -536,23 +606,23 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
             }
         }
         //exit
-        else if(Client_message->type == 3){
+        else if(Client_message.type == 3){
             printf("Server Exit\n"); 
             
             break;
         }
         //join
-        else if(Client_message->type == 4){
-            if(Join_session(&Session_list, Client_message->data, Client_message->source)){
+        else if(Client_message.type == 4){
+            if(Join_session(&Session_list, Client_message.data, Client_message.source)){
                 printf("Join Session successful\n");
                 //write
-                size_t combinedSize = strlen("JN_ACK") + strlen(Client_message->data) + 1; // +1 for the space
+                size_t combinedSize = strlen("JN_ACK") + strlen(Client_message.data) + 1; // +1 for the space
 
                 // Declare the result array with the exact size
                 char result[combinedSize];
 
                 // Use sprintf to combine the strings with a space in between
-                sprintf(result, "%s %s", "JN_ACK", Client_message->data);
+                sprintf(result, "%s %s", "JN_ACK", Client_message.data);
                 
                 Message response = textToMessage(result, "server"); 
                 write(connfd, messageToString(response), sizeof(messageToString(response)));
@@ -560,20 +630,20 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
             }
             else{
                 printf("Join Session Unsuccessful\n");
-                size_t combinedSize = strlen("JN_NAK") + strlen(Client_message->data)+ strlen("Not_a_valid_session") + 1; // +1 for the space
+                size_t combinedSize = strlen("JN_NAK") + strlen(Client_message.data)+ strlen("Not_a_valid_session") + 1; // +1 for the space
 
                 // Declare the result array with the exact size
                 char result[combinedSize];
 
                 // Use sprintf to combine the strings with a space in between
-                sprintf(result, "%s %s %s", "JN_NAK", Client_message->data, "Not_a_valid_session");
+                sprintf(result, "%s %s %s", "JN_NAK", Client_message.data, "Not_a_valid_session");
                 
                 Message response = textToMessage(result, "server"); 
                 write(connfd, messageToString(response), sizeof(messageToString(response)));
             }
         }
         //Leave Session
-        else if(Client_message->type == 7){
+        else if(Client_message.type == 7){
             if(deletePerson_from_session(&Session_list, "1", "One")){
                 //Successfully left session 
                 printf("Left Session successful\n");
@@ -586,33 +656,33 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
             }
         }
         //New_session
-        else if(Client_message->type == 8){
-            create_session(&Session_list, Client_message->data);
+        else if(Client_message.type == 8){
+            create_session(&Session_list, Client_message.data);
             Message response = textToMessage("/createsession", "server"); 
             write(connfd, messageToString(response), sizeof(messageToString(response)));
         }
         //Message
-        else if(Client_message->type == 10){
+        else if(Client_message.type == 10){
             //
             printf("idk what to do");
-            char *Session_name_hes_in = getSessionName(&Session_list, Client_message->source);
+            char *Session_name_hes_in = getSessionName(&Session_list, Client_message.source);
             char *names = getNamesInSession(&Session_list, Session_name_hes_in);
             printf("%s", names);
 
 
-            size_t combinedSize = strlen(names) + strlen(Client_message->data) + 1; // +1 for the space
+            size_t combinedSize = strlen(names) + strlen(Client_message.data) + 1; // +1 for the space
 
             // Declare the result array with the exact size
             char result[combinedSize];
 
             // Use sprintf to combine the strings with a space in between
-            sprintf(result, "%s %s", names, Client_message->data);
+            sprintf(result, "%s %s", names, Client_message.data);
 
-            Message response = textToMessage(result, Client_message->source); 
+            Message response = textToMessage(result, Client_message.source); 
             write(connfd, messageToString(response), sizeof(messageToString(response)));
         }
         //Query/List
-        else if(Client_message->type == 11){
+        else if(Client_message.type == 11){
             char *result = list_of_session(&Session_list);
              // and send that buffer to client 
             write(connfd, result, sizeof(result)); 
