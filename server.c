@@ -128,6 +128,81 @@ bool Join_session(struct MultiLinkedList* multiList, const char* listName, const
 //     printf("NULL\n");
 // }
 
+int isNameInList(struct Node* head, const char* name) {
+    while (head != NULL) {
+        if (strcmp(head->data, name) == 0) {
+            // Name found in the list
+            return 1;
+        }
+        head = head->next;
+    }
+    // Name not found in the list
+    return 0;
+}
+
+// Function to get the name of the session where a specific name is present
+char* getSessionName(struct MultiLinkedList* multiList, const char* targetName) {
+    for (int i = 0; i < multiList->numLists; ++i) {
+        if (isNameInList(multiList->lists[i], targetName)) {
+            // Target name is present in this session
+            return multiList->names[i];
+        }
+    }
+
+    // Name not found in any session
+    return NULL;
+}
+
+char* getNamesInList(struct Node* head) {
+    if (head == NULL) {
+        // Return NULL if the list is empty
+        return NULL;
+    }
+
+    // Calculate the total length of the result string
+    size_t totalLength = 0;
+    struct Node* current = head;
+    while (current != NULL) {
+        totalLength += strlen(current->data) + 2;  // 2 for separating characters (~ and space)
+        current = current->next;
+    }
+
+    // Allocate memory for the result string
+    char* namesString = (char*)malloc(totalLength);
+    if (namesString == NULL) {
+        // Memory allocation failure
+        return NULL;
+    }
+
+    namesString[0] = '\0';  // Initialize the string as empty
+
+    // Concatenate names to the result string
+    current = head;
+    while (current != NULL) {
+        strcat(namesString, current->data);
+        strcat(namesString, "~");  // Use any separator you prefer
+        current = current->next;
+    }
+
+    // Remove the trailing separator and return the result string
+    namesString[strlen(namesString) - 2] = '\0';
+    return namesString;
+}
+
+// Function to get names in a specified session
+char* getNamesInSession(struct MultiLinkedList* multiList, const char* sessionName) {
+    for (int i = 0; i < multiList->numLists; ++i) {
+        if (strcmp(multiList->names[i], sessionName) == 0) {
+            // Found the named session, use the existing function to get all names
+            return getNamesInList(multiList->lists[i]);
+        }
+    }
+
+    // Named session not found
+    printf("Error: Session with name '%s' not found\n", sessionName);
+    return NULL;
+}
+
 
 char* list_of_session(struct MultiLinkedList* multiList) {
     char* result = (char*)malloc(1);  // Start with an empty string
@@ -229,10 +304,29 @@ textToMessage (char *text, char *source)
     {
       type = 3;
     }
+  else if (strncmp (text, "LO_ACK", 6) == 0)
+    {
+      type = 1;
+    }
+  else if (strncmp (text, "LO_NAK", 6) == 0)
+    {
+      type = 2;
+      args = 2;
+    }
   else if (strncmp (text, "/joinsession", 12) == 0)
     {
       type = 4;
       args = 2;
+    }
+    else if (strncmp (text, "JN_ACK", 6) == 0)
+    {
+      type = 5;
+      args = 2;
+    }
+    else if (strncmp (text, "JN_NAK", 6) == 0)
+    {
+      type = 6;
+      args = 3;
     }
   else if (strncmp (text, "/leavesession", 13) == 0)
     {
@@ -427,19 +521,24 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         //login
         if(Client_message->type == 0){
             //change username and password
-            char* UserID = "hello";
-            char* password = "password";
+            char *inputCopy = strdup(Client_message->data);
+            char* UserID = strtok(inputCopy, " ");;
+            char* password = strtok(NULL, " ");
              if (isValidLogin(UserID, password)) {
                 printf("Login successful\n");
-                //wrtie login Ack
+                Message response = textToMessage("LO_ACK", "server"); 
+                write(connfd, messageToString(response), sizeof(messageToString(response)));
+                
             } else {
                 printf("Invalid username or password\n");
-                //wrtie login NAck
+                Message response = textToMessage("LO_NAK UserName_or_Password_incorrect", "server"); 
+                write(connfd, messageToString(response), sizeof(messageToString(response)));
             }
         }
         //exit
         else if(Client_message->type == 3){
             printf("Server Exit\n"); 
+            
             break;
         }
         //join
@@ -447,12 +546,30 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
             if(Join_session(&Session_list, Client_message->data, Client_message->source)){
                 printf("Join Session successful\n");
                 //write
+                size_t combinedSize = strlen("JN_ACK") + strlen(Client_message->data) + 1; // +1 for the space
+
+                // Declare the result array with the exact size
+                char result[combinedSize];
+
+                // Use sprintf to combine the strings with a space in between
+                sprintf(result, "%s %s", "JN_ACK", Client_message->data);
+                
+                Message response = textToMessage(result, "server"); 
+                write(connfd, messageToString(response), sizeof(messageToString(response)));
                 //Sucessfully joined session 
             }
             else{
                 printf("Join Session Unsuccessful\n");
-                //write 
-                //Failed to send session
+                size_t combinedSize = strlen("JN_NAK") + strlen(Client_message->data)+ strlen("Not_a_valid_session") + 1; // +1 for the space
+
+                // Declare the result array with the exact size
+                char result[combinedSize];
+
+                // Use sprintf to combine the strings with a space in between
+                sprintf(result, "%s %s %s", "JN_NAK", Client_message->data, "Not_a_valid_session");
+                
+                Message response = textToMessage(result, "server"); 
+                write(connfd, messageToString(response), sizeof(messageToString(response)));
             }
         }
         //Leave Session
@@ -460,6 +577,8 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
             if(deletePerson_from_session(&Session_list, "1", "One")){
                 //Successfully left session 
                 printf("Left Session successful\n");
+                Message response = textToMessage("/leavesession", "server"); 
+                write(connfd, messageToString(response), sizeof(messageToString(response)));
             }
             else{
                 //Did not leave session
@@ -469,11 +588,28 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         //New_session
         else if(Client_message->type == 8){
             create_session(&Session_list, Client_message->data);
+            Message response = textToMessage("/createsession", "server"); 
+            write(connfd, messageToString(response), sizeof(messageToString(response)));
         }
         //Message
         else if(Client_message->type == 10){
             //
             printf("idk what to do");
+            char *Session_name_hes_in = getSessionName(&Session_list, Client_message->source);
+            char *names = getNamesInSession(&Session_list, Session_name_hes_in);
+            printf("%s", names);
+
+
+            size_t combinedSize = strlen(names) + strlen(Client_message->data) + 1; // +1 for the space
+
+            // Declare the result array with the exact size
+            char result[combinedSize];
+
+            // Use sprintf to combine the strings with a space in between
+            sprintf(result, "%s %s", names, Client_message->data);
+
+            Message response = textToMessage(result, Client_message->source); 
+            write(connfd, messageToString(response), sizeof(messageToString(response)));
         }
         //Query/List
         else if(Client_message->type == 11){

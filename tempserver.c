@@ -142,6 +142,80 @@ void Join_session(struct MultiLinkedList* multiList, const char* listName, const
 //     printf("NULL\n");
 // }
 
+int isNameInList(struct Node* head, const char* name) {
+    while (head != NULL) {
+        if (strcmp(head->data, name) == 0) {
+            // Name found in the list
+            return 1;
+        }
+        head = head->next;
+    }
+    // Name not found in the list
+    return 0;
+}
+
+// Function to get the name of the session where a specific name is present
+char* getSessionName(struct MultiLinkedList* multiList, const char* targetName) {
+    for (int i = 0; i < multiList->numLists; ++i) {
+        if (isNameInList(multiList->lists[i], targetName)) {
+            // Target name is present in this session
+            return multiList->names[i];
+        }
+    }
+
+    // Name not found in any session
+    return NULL;
+}
+
+char* getNamesInList(struct Node* head) {
+    if (head == NULL) {
+        // Return NULL if the list is empty
+        return NULL;
+    }
+
+    // Calculate the total length of the result string
+    size_t totalLength = 0;
+    struct Node* current = head;
+    while (current != NULL) {
+        totalLength += strlen(current->data) + 2;  // 2 for separating characters (~ and space)
+        current = current->next;
+    }
+
+    // Allocate memory for the result string
+    char* namesString = (char*)malloc(totalLength);
+    if (namesString == NULL) {
+        // Memory allocation failure
+        return NULL;
+    }
+
+    namesString[0] = '\0';  // Initialize the string as empty
+
+    // Concatenate names to the result string
+    current = head;
+    while (current != NULL) {
+        strcat(namesString, current->data);
+        strcat(namesString, "~");  // Use any separator you prefer
+        current = current->next;
+    }
+
+    // Remove the trailing separator and return the result string
+    namesString[strlen(namesString) - 2] = '\0';
+    return namesString;
+}
+
+// Function to get names in a specified session
+char* getNamesInSession(struct MultiLinkedList* multiList, const char* sessionName) {
+    for (int i = 0; i < multiList->numLists; ++i) {
+        if (strcmp(multiList->names[i], sessionName) == 0) {
+            // Found the named session, use the existing function to get all names
+            return getNamesInList(multiList->lists[i]);
+        }
+    }
+
+    // Named session not found
+    printf("Error: Session with name '%s' not found\n", sessionName);
+    return NULL;
+}
 
 char* list_of_session(struct MultiLinkedList* multiList) {
     char* result = (char*)malloc(1);  // Start with an empty string
@@ -204,29 +278,30 @@ int main() {
     addNode(&Session_list.lists[0], "Two");
     addNode(&Session_list.lists[1], "Three");
 
-    char *result = list_of_session(&Session_list);
-    printf("%s", result);
+    
 
     create_session(&Session_list, "FirstList");
 
 
-    Join_session(&Session_list, "Firstist", "Four");
+    Join_session(&Session_list, "FirstList", "Four");
     Join_session(&Session_list, "FirstList", "Five");
     deletePerson_from_session(&Session_list, "1", "One");
     
-    result = list_of_session(&Session_list);
+    char *result = list_of_session(&Session_list);
     printf("%s", result);
+
+    char *hell = getSessionName(&Session_list, "Four");
+    
+
+    
+
+    char *names = getNamesInSession(&Session_list, hell);
+    printf("%s", names);
 
     free_sessions(&Session_list);
 
-    const char *inputUsername = "Andrew";
-    const char *inputPassword = "pasword";
-
-    if (isValidLogin(inputUsername, inputPassword)) {
-        printf("Login successful\n");
-    } else {
-        printf("Invalid username or password\n");
-    }
+    
+    
 
     return 0;
 }
