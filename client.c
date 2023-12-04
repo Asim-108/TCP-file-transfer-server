@@ -353,17 +353,25 @@ int main(){
     //if not login command
     if(strcmp(token[0], "/login") != 0){
       printf("Invalid input, please login with /login\n");
+
+      tokencount = 0;
+      bzero(tokens, sizeof(tokens));
+      fgets(input, sizeof(input), stdin);
+      char inputCopy[sizeof(input)];
+      strcpy(inputCopy, input);
     }
     else if(tokencount != 5){
       printf("Wrong number of arguments for /login command\n");
+
+      tokencount = 0;
+      bzero(tokens, sizeof(tokens));
+      fgets(input, sizeof(input), stdin);
+      char inputCopy[sizeof(input)];
+      strcpy(inputCopy, input);
     }
     else{
       loggedIn = 1;
     }
-
-    fgets(input, sizeof(input), stdin);
-    char inputCopy[sizeof(input)];
-    strcpy(inputCopy, input);
   }
   
 
@@ -383,9 +391,12 @@ int main(){
   //try to login to the server
 
   Message loginAttempt = textToMessage(inputCopy, tokens[1]);
-  char* buff = messageToText(loginAttempt);
+  char* sendBuff = messageToString(loginAttempt);
 
-  write(sockfd, buff, sizeof(buff));
+  write(sockfd, sendBuff, sizeof(sendBuff));
+  free(sendBuff);
+
+  char buff[sizeof(Message)];
   bzero(buff, sizeof(buff));
   read(sockfd, buff, sizeof(buff));
 
