@@ -293,7 +293,22 @@ void chat(int sockfd, char* source){
       printf("successfully created session %s\n", messageReceived->data);
     }
     else if(messageReceived->type == 10){
-      printf("%s: %s\n", messageReceived->source, messageReceived->data);
+      //message received from a host, check if it is for us
+
+      char* token = strtok(messageReceived->data, "~");
+      char* prev;
+      bool displayMessage = false;
+
+      while(token != NULL){
+        if(strcmp(source, token) == 0){
+          displayMessage = true;
+        }
+        prev = token;
+        token = strtok(NULL, "~");
+      }
+      if(displayMessage){
+        printf("%s: %s\n", messageReceived->source, messageReceived->data);
+      }
     }
     else if(messageReceived->type == 11){
       printf("list of sessions:\n %s\n", messageReceived->data);
