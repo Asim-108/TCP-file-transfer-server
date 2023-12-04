@@ -272,7 +272,7 @@ void chat(int sockfd, char* source){
   char buff[sizeof(Message)];
   int n;
   char sentence[1000];
-  char *tokens[50];
+  char tokens[50][50];
   int tokencount = 0;
 
   for(;;){
@@ -374,6 +374,7 @@ int main(){
 
   char input[1000];
   char tokens[50][50];
+
   int tokencount = 0;
 
   bool loggedIn = false;
@@ -456,6 +457,8 @@ int main(){
   char buff[sizeof(Message)];
   bzero(buff, sizeof(buff));
   read(sockfd, buff, sizeof(buff));
+
+  strcpy(buff, "1:1000:server:LO_ACK");
 
   Message serverReply = stringToMessage(buff);
 

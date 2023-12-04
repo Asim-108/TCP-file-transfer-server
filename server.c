@@ -542,6 +542,7 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
     char buff[sizeof(Message)]; 
     int n; 
     // infinite loop for chat 
+    int tempCounter = 0;
     for (;;) { 
         bzero(buff, sizeof(Message)); 
    
@@ -584,6 +585,15 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
 
         read(connfd, buff, 100); 
 
+        if(tempCounter == 0){
+            strcpy(buff, "0:1000:Asim:Asim test ");
+        }
+        else if(tempCounter == 1){
+            strcpy(buff, "4:1000:Asim:1");
+        }
+        tempCounter++;
+        
+
         // print buffer which contains the client contents 
         printf("From client: %s\t To client : ", buff);
 
@@ -591,7 +601,9 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         //login
         if(Client_message.type == 0){
             //change username and password
-            char *inputCopy = strdup(Client_message.data);
+            // char *inputCopy = strdup(Client_message.data);
+            char* inputCopy[sizeof(Client_message.data)];
+            strcpy(inputCopy, Client_message.data);
             char* UserID = strtok(inputCopy, " ");;
             char* password = strtok(NULL, " ");
              if (isValidLogin(UserID, password)) {
