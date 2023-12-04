@@ -15,7 +15,7 @@
 #define SA struct sockaddr
 
 //previously used define statements, subject to change
-#define PORT 8080
+#define PORT 8081
 #define MAXLINE 1024
 #define SERVERADDRESS "192.168.1.1"
 
@@ -34,6 +34,8 @@ struct MultiLinkedList {
     char** names;
     int numLists;
 };
+
+struct MultiLinkedList Session_list;
 
 void initalize_sessions(struct MultiLinkedList* multiList, int numLists) {
     multiList->numLists = numLists;
@@ -93,23 +95,59 @@ bool  deletePerson_from_session(struct MultiLinkedList* multiList, const char* l
     printf("Error: List with name '%s' not found\n", listName);
 }
 
-void create_session(struct MultiLinkedList* multiList, const char* name) {
-    multiList->numLists++;
-    multiList->lists = (struct Node**)realloc(multiList->lists, multiList->numLists * sizeof(struct Node*));
-    multiList->names = (char**)realloc(multiList->names, multiList->numLists * sizeof(char*));
-    multiList->lists[multiList->numLists - 1] = NULL;
-    multiList->names[multiList->numLists - 1] = strdup(name);
+void create_session(const char* name) {
+    Session_list.numLists++;
+    Session_list.lists = (struct Node**)realloc(Session_list.lists, Session_list.numLists * sizeof(struct Node*));
+    Session_list.names = (char**)realloc(Session_list.names, Session_list.numLists * sizeof(char*));
+    Session_list.lists[Session_list.numLists - 1] = NULL;
+    Session_list.names[Session_list.numLists - 1] = strdup(name);
 }
 
-bool Join_session(struct MultiLinkedList* multiList, const char* listName, const char* data) {
+char* list_of_session(struct MultiLinkedList* multiList) {
+    char* result = (char*)malloc(1);  // Start with an empty string
+    result[0] = '\0';
+
     for (int i = 0; i < multiList->numLists; ++i) {
-        if (strcmp(multiList->names[i], listName) == 0) {
-            // Found the named list, add node to it
-            addNode(&multiList->lists[i], data);
+        char temp[256];  // Adjust the size based on your needs
+        snprintf(temp, sizeof(temp), "List %s: ", multiList->names[i]);
+
+        // Concatenate the list representation to the result string
+        result = (char*)realloc(result, strlen(result) + strlen(temp) + 1);
+        strcat(result, temp);
+
+        struct Node* current = multiList->lists[i];
+        while (current != NULL) {
+            char nodeData[256];  // Adjust the size based on your needs
+            snprintf(nodeData, sizeof(nodeData), "%s -> ", current->data);
+
+            // Concatenate the node data to the result string
+            result = (char*)realloc(result, strlen(result) + strlen(nodeData) + 1);
+            strcat(result, nodeData);
+
+            current = current->next;
+        }
+
+        // Concatenate "NULL" to indicate the end of the list
+        result = (char*)realloc(result, strlen(result) + 6 + 1);
+        strcat(result, "NULL\n");
+    }
+
+    return result;
+}
+
+bool Join_session(const char* listName, const char* data) {
+    for (int i = 0; i < Session_list.numLists; ++i) {
+        if(!strcmp(Session_list.names[i], listName)){
+            char* result = list_of_session(&Session_list);
+            printf("Before:%s\n", result);
+            addNode(&Session_list.lists[i], data);
+            result = list_of_session(&Session_list);
+            printf("After%s\n", result);
             return true;
         }
     }
     // If the named list is not found, you can handle the error or provide a message
+    
     printf("Error: List with name '%s' not found\n", listName);
     return false;
 }
@@ -198,37 +236,7 @@ char* getNamesInSession(struct MultiLinkedList* multiList, const char* sessionNa
 }
 
 
-char* list_of_session(struct MultiLinkedList* multiList) {
-    char* result = (char*)malloc(1);  // Start with an empty string
-    result[0] = '\0';
 
-    for (int i = 0; i < multiList->numLists; ++i) {
-        char temp[256];  // Adjust the size based on your needs
-        snprintf(temp, sizeof(temp), "List %s: ", multiList->names[i]);
-
-        // Concatenate the list representation to the result string
-        result = (char*)realloc(result, strlen(result) + strlen(temp) + 1);
-        strcat(result, temp);
-
-        struct Node* current = multiList->lists[i];
-        while (current != NULL) {
-            char nodeData[256];  // Adjust the size based on your needs
-            snprintf(nodeData, sizeof(nodeData), "%s -> ", current->data);
-
-            // Concatenate the node data to the result string
-            result = (char*)realloc(result, strlen(result) + strlen(nodeData) + 1);
-            strcat(result, nodeData);
-
-            current = current->next;
-        }
-
-        // Concatenate "NULL" to indicate the end of the list
-        result = (char*)realloc(result, strlen(result) + 6 + 1);
-        strcat(result, "NULL\n");
-    }
-
-    return result;
-}
 
 
 
@@ -466,9 +474,9 @@ Message stringToMessage(char* str){
   int count = 3;
   
   //if type has valid data field
-  if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0
-  || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0
-  || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0
+  if (strncmp (token, "0", 1) == 0 || strncmp (token, "2", 1) == 0 || strncmp (token, "3", 1) == 0
+  || strncmp (token, "4", 1) == 0 || strncmp (token, "5", 1) == 0 || strncmp (token, "7", 1) == 0
+  || strncmp (token, "6", 1) == 0 || strncmp (token, "9", 1) == 0 || strncmp (token, "8", 1) == 0 || strncmp (token, "11", 1) == 0 
   || strncmp (token, "10", 1) == 0 || strncmp (token, "12", 1) == 0){
     count = 4;
   }
@@ -538,7 +546,8 @@ char* messageToText(Message message0){
     } 
 }*/
 
-void chat(int connfd, struct MultiLinkedList* Session_list){
+void chat(int connfd){
+    
     char buff[sizeof(Message)]; 
     int n; 
     // infinite loop for chat 
@@ -589,8 +598,9 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
             strcpy(buff, "0:1000:Asim:Asim test ");
         }
         else if(tempCounter == 1){
-            strcpy(buff, "4:1000:Asim:1");
+            strcpy(buff, "8:1000:Asim:helllo hi");
         }
+        
         tempCounter++;
         
 
@@ -598,6 +608,8 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         printf("From client: %s\t To client : ", buff);
 
         Message Client_message = stringToMessage(buff);
+        printf("has%d:%d:%s:%sdone", Client_message.type, Client_message.size, Client_message.source, Client_message.data);
+        
         //login
         if(Client_message.type == 0){
             //change username and password
@@ -625,7 +637,8 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         }
         //join
         else if(Client_message.type == 4){
-            if(Join_session(&Session_list, Client_message.data, Client_message.source)){
+      
+            if(Join_session(Client_message.data, Client_message.source)){
                 printf("Join Session successful\n");
                 //write
                 size_t combinedSize = strlen("JN_ACK") + strlen(Client_message.data) + 1; // +1 for the space
@@ -669,7 +682,11 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
         }
         //New_session
         else if(Client_message.type == 8){
-            create_session(&Session_list, Client_message.data);
+            char* result = list_of_session(&Session_list);
+            printf("\n\nBefore:%s\n\n", Client_message.data);
+            create_session(Client_message.data);
+            result = list_of_session(&Session_list);
+            printf("Before:%s\n", result);
             Message response = textToMessage("/createsession", "server"); 
             write(connfd, messageToString(response), sizeof(messageToString(response)));
         }
@@ -709,9 +726,10 @@ void chat(int connfd, struct MultiLinkedList* Session_list){
 }
 
 int main(){
-    struct MultiLinkedList Session_list;
+    
     initalize_sessions(&Session_list, 3);
     
+
     
     
 
@@ -758,8 +776,9 @@ int main(){
     else{
         printf("server accept the client\n"); 
     }
-    // Function for chatting between client and server 
-    chat(connfd, &Session_list); 
+    
+    
+    chat(connfd); 
    
     // After chatting close the socket 
     close(sockfd); 

@@ -300,15 +300,7 @@ int main() {
 
     free_sessions(&Session_list);
 
-    char test[50];
-    strcpy(test, "Asim test");
-
-    char inputCopy[sizeof(test)];
-    strcpy(inputCopy, test);
-    char* UserID = strtok(inputCopy, " ");;
-    char* password = strtok(NULL, " ");
-
-    printf("\n%s %s", UserID, password);
+    
     return 0;
 }
 
